@@ -17,6 +17,8 @@ Each bridge leg is fully bidirectional. There is no direct Asset Hub → Base pa
 
 All components of this setup are fully deployed and thoroughly tested. The Wormhole WTT bridge is operational, the Uniswap v4 liquidity pool is live, and tokens flow bidirectionally across the entire route.
 
+> **Remaining work:** The last open TODO is the GAVUN WUD website bridge UI — see [Chapter 7: TODOs for GAVUN WUD Website](#7-todos-for-gavun-wud-website).
+
 ![GAVUN WUD Architecture](images/architecture-diagram.svg)
 
 *Origin · Two Bridges · Base Liquidity*
