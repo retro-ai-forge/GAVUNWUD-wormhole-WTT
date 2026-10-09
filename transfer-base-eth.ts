@@ -13,7 +13,7 @@ const WRAPPED_WUD_ADDRESS = "0xfd4bf08b1583f1cfd2f9a3eadc696ec5e6c55239";
 const WUD_DECIMALS = 10;
 
 // Amount to transfer back — change this
-const TRANSFER_AMOUNT = "5000000";
+const TRANSFER_AMOUNT = "1"; // 1 WUD
 
 async function transferBack() {
   const wh = await wormhole("Mainnet", [evm]);

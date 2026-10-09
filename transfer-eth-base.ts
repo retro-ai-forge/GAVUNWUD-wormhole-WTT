@@ -14,7 +14,7 @@ const WUD_TOKEN_ADDRESS = "0x5FDcD48F09FB67de3D202cd854B372AEC1100ED5";
 const WUD_DECIMALS = 10;
 
 // Amount to transfer — change this to however many WUD you want to bridge
-const TRANSFER_AMOUNT = "140000000"; // 1 WUD
+const TRANSFER_AMOUNT = "1"; // 1 WUD
 
 async function transferToken() {
   const wh = await wormhole("Mainnet", [evm]);
