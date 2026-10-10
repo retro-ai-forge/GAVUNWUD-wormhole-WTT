@@ -13,6 +13,8 @@ Polkadot Asset Hub ──► Snowbridge ──► Ethereum ──► Wormhole WT
 
 Each bridge leg is fully bidirectional. There is no direct Asset Hub → Base path; WUD must pass through Ethereum as an intermediary.
 
+### → [FAQ](#8-faq)
+
 ## Architecture Diagram
 
 All components of this setup are fully deployed and thoroughly tested. The Wormhole WTT bridge is operational, the Uniswap v4 liquidity pool is live, and tokens flow bidirectionally across the entire route.
@@ -299,7 +301,56 @@ await xfer.completeTransfer(destSigner);
 
 ---
 
-## 8. References
+## 8. FAQ
+
+**Q1: Is the Uniswap v4 liquidity permanently locked, or can it be withdrawn?**
+
+The initial liquidity was provided as standard LP — it is not permanently locked. Liquidity providers can add and remove at any time. Here is the details how to make it irreversible.
+
+How Burning LP Keys Works
+
+1. The Dead Address: To burn the keys, you transfer your LP tokens to a verifiably inaccessible address. The most common one is the null address: 0x0000000000000000000000000000000000000000 (often called 0x0 or the burn address).
+2. Irreversible Lock: Because nobody holds the private keys to the null address, those LP tokens can never be moved or used again. The liquidity is permanently trapped in the pool for public trading, eliminating any risk of a "rug pull" by the creator.
+
+**Q2: Does Uniswap v4 support single-sided liquidity, or do you always need both WUD and ETH?**
+
+Uniswap v4, like v3, supports concentrated liquidity ranges that can function as single-sided positions at extreme price boundaries. The current pool was set up as a standard two-sided WUD/ETH position. Single-sided options have not been fully explored yet.
+
+**Q3: If Wormhole relies on Guardians, how is this trustless? Should we replace trust in the wormhole guardian with our own multisig?**
+
+We trust the Wormhole protocol and the cryptographic guarantees behind its 19-Guardian network (13/19 signing threshold). The key difference is that we do not need to operate or manage the infrastructure — Wormhole's Guardian set secures all bridges using their protocol, not just ours. For the current market cap (~600k), this level of security is appropriate and requires zero maintenance from the team. If the project grows significantly, the Axelar route is already documented as an upgrade path with a larger validator set (see [Chapter 2](#2-bridge-comparison-wormhole-wtt-vs-wormhole-axelar)). Note: Axelar was also exploited in June 2026 — at 500M+ market cap the security conversation should be revisited.
+
+**Q4: Can anyone mint wrapped WUD on Base without locking actual WUD on Ethereum?**
+
+No. The wrapped WUD on Base is a Wormhole Wrapped Token (WTT) created through the Token Bridge's lock-and-mint mechanism. Minting is only triggered when a Guardian-signed VAA proves that native WUD was locked on the Ethereum side. The VAA requires signatures from at least **13 of 19 Guardian nodes** — established infrastructure companies including Figment, Everstake, P2P, Chorus One, Chainstack, and Google Cloud. Each Guardian independently runs full nodes on every supported chain and observes the locking transaction before signing. The destination chain contract verifies all signatures on-chain before minting.
+
+The Token Bridge contract deploys and permanently retains ownership of the wrapped token contract on Base — this ownership cannot be transferred to any individual or team. When WUD is bridged back, wrapped tokens are burned and the originals are released on Ethereum. There is no other path to create wrapped WUD.
+
+Wormhole contracts have been independently audited by Neodyme, Kudelski, Trail of Bits, OtterSec, Halborn, and CertiK. Contract upgrades and Guardian set changes require a 2/3 Guardian supermajority via on-chain governance.
+
+**Q5: Has the complete route from Hydration to Base and back been tested?**
+
+Yes. The full route (Polkadot Asset Hub → Snowbridge → Ethereum → Wormhole WTT → Base) has been tested in both directions. Transaction hashes for the attestation and transfers are documented in [Chapter 4](#4-bridge-2-wormhole-wtt-ethereum--base) and can be verified on [Wormholescan](https://wormholescan.io/) and the respective chain explorers.
+
+**Q6: What happens if a bridge transaction gets stuck? Can holders recover their WUD without depending on the team?**
+
+Each bridge segment is maintained by its respective protocol — Snowbridge for the Polkadot ↔ Ethereum leg and Wormhole for the Ethereum ↔ Base leg. If a transaction stalls, support comes from the bridge operator, not the GAVUN WUD team. This is by design: it saves the team from running bridge support infrastructure. Wormhole WTT does not require a manual redeem step — transfers complete automatically.
+
+**Q7: The repo says everything is fully tested and needs zero maintenance. Is that realistic when bridges and contracts get updated?**
+
+The scripts in this repo are self-contained and use the Wormhole SDK to interact with on-chain contracts. The bridge contracts themselves are maintained by Wormhole and Snowbridge — upgrades to those protocols do not require changes on our side unless the SDK API changes. The attestation is a one-time event, and the transfer scripts have no ongoing dependencies. That said, periodically updating the SDK version is good practice.
+
+**Q8: Why is Wormhole WTT safe?**
+
+Wormhole WTT is secured by **19 Guardian nodes** (including Figment, Everstake, P2P, Chorus One, Chainstack, Google Cloud) with a **13/19 signing threshold**. Every cross-chain message must be independently observed and signed by at least 13 Guardians before tokens are minted or released. The destination chain contract verifies all signatures on-chain. The Token Bridge retains permanent ownership of wrapped token contracts — no one can mint outside this mechanism. Contracts have been audited by Neodyme, Kudelski, Trail of Bits, OtterSec, Halborn, and CertiK. Contract upgrades require a 2/3 Guardian supermajority.
+
+**Trust assumptions:** Wormhole is not fully trustless like Snowbridge's light clients — it is a permissioned validator set. You trust that fewer than 7 of 19 Guardians collude. The 2022 exploit ($326M) was Solana-specific and does not affect the EVM path used by WUD.
+
+**General approach:** The priority is to focus on what the project needs for the next two years without consuming team resources. Onboarding new users is more important than over-engineering infrastructure at the current stage. When the project has more resources, automation and security upgrades become practical.
+
+---
+
+## 9. References
 
 - [Wormhole Attest Tokens Guide](https://wormhole.com/docs/products/token-transfers/wrapped-token-transfers/guides/attest-tokens/)
 - [Wormhole Transfer Wrapped Assets Guide](https://wormhole.com/docs/products/token-transfers/wrapped-token-transfers/guides/transfer-wrapped-assets/)
