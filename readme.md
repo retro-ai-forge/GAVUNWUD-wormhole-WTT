@@ -364,3 +364,20 @@ Wormhole WTT is secured by **19 Guardian nodes** (including Figment, Everstake, 
 - [Snowbridge Architecture — Ethereum Verification](https://docs.snowbridge.network/architecture/verification/ethereum)
 - [Snowbridge Architecture — Polkadot Verification](https://docs.snowbridge.network/architecture/verification/polkadot)
 - [Polkadot Wiki](https://wiki.polkadot.com/)
+
+---
+
+## 10. Technical Decision Matrix: Option A vs Option B
+
+| Dimension (technical) | Option A — Snowbridge + Wormhole WTT | Option B — Existing Base ERC-20 + Custom Bridge |
+|---|---|---|
+| **Short security danger summary** | Bridge compromise risk: If Wormhole WTT is compromised, an attacker can mint wrapped supply on Base without backing, then dump it into liquidity. Also depends on Snowbridge availability. | Admin/mint configuration risk until finalized: If minting isn't restricted to bridge-only, that key path can mint extra Base supply. After renounce, main risk becomes bridge compromise and misconfiguration (peers/decimals/limits). |
+| **Base-side token contract** | A distinct wrapped ERC-20 on Base (0xfd4b…5239). No existing contract reused. | Uses already-deployed Base ERC-20 (0x25de…). No new Base token contract required. |
+| **Does Base supply increase via "mint"?** | Yes, but minting is performed by Token Bridge flow (lock on Ethereum → mint on Base; Base→Eth burns wrapped). | Yes, Base supply can increase if token has active minter/owner path. Trustless target: bridge becomes only minter and ownership is renounced. |
+| **Supply integrity invariant** | Wrapped supply coupled to bridge accounting (net bridged-in minus bridged-out). Capped by what is locked on Ethereum side. | Only guaranteed after token is configured so bridge can mint and mints only when backing is locked. Before that, remaining admin routes break invariant. |
+| **On-chain components you must deploy** | Typically no custom bridge contracts; use existing Wormhole Token Bridge infrastructure. | Deploy/configure bridge contracts (managers/transceivers etc.) and run handover/renounce process. Higher custom surface. |
+| **Operational maintenance load** | Lower on-chain maintenance (bridge is standard). Still maintain UI/ops, attestation/transfer UX, relayers, monitoring. | Higher upfront deployment + verification + configuration + handover checklist. After full renounce, mostly monitoring. |
+| **Main technical bonus** | Harder to "owner-mint rug" wrapped token because mint/burn handled by bridge flow. Quick to stand up — standard wrapped-asset bridge. | Can make existing Base token the redeemable/bridgeable one without separate wrapped contract, if minting is locked down and admin rights renounced. |
+| **Main technical malus** | Separate Base ERC-20 contract for bridged WUD (0xfd4b…), not same as any other "Base WUD". Different addresses ⇒ different assets. | Until bridge-only-minter + renounce achieved, system retains admin-key risk. Higher chance of misconfiguration (peers/decimals/limits). |
+| **Liquidity/pool mechanics** | Any pool for wrapped token prices that token. Arbitrage aligns it with external markets if bridging is active and liquid. | Any pool for 0x25de… prices that ERC-20. Price alignment to Hydration robust only when redemption/bridging is live + enough two-sided liquidity. **Note:** With only 2.5B WUD minted and a one-sided pool setup, price becomes extremely unstable — even small swaps cause dramatic price swings. Two-sided liquidity is critical to stabilize price discovery. |
+| **One-sided pool / price setting** | If single-sided liquidity, initial price set by initialization + tick/range chosen; trades move price along curve. | Same: single-sided liquidity means price effectively defined by initial price + range boundaries, sensitive to small trades until counter-asset liquidity exists. |
